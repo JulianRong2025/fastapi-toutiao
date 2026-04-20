@@ -18,7 +18,7 @@ AsyncSessionLocal = async_sessionmaker(
     )
 
 # 依赖项：获取数据库会话
-async def get_database():
+async def get_db():
     async with AsyncSessionLocal() as session:  # 获取异步会话
         try:
             yield session  # 返回数据库会话给路由处理函数使用
