@@ -35,3 +35,29 @@ async def increase_news_views(db: AsyncSession, news_id: int):
 
     # 更新操作后，要检查数据库是否真的命中的数据，命中了返回 true
     return result.rowcount > 0 # 返回受影响的行数
+
+async def get_related_news(db: AsyncSession, category_id: int, news_id: int, limit: int = 5):
+    # order_by 排序：浏览量和发布时间
+    stmt = select(News).where(
+        News.category_id == category_id, 
+        News.id != news_id
+        ).order_by(
+            News.views.desc(),
+            News.publish_time.desc()
+        ).limit(
+            limit
+            )
+    result = await db.execute(stmt) 
+    # return result.scalars().all()
+    related_news = result.scalars().all()
+    # 用列表推导式把 News 对象转换成字典，前端需要的字段
+    return [{
+        "id": news.id,
+            "title": news.title,
+            "content": news.content,
+            "image": news.image,
+            "author": news.author,
+            "publishTime": news.publish_time,
+            "category_id": news.category_id,
+            "views": news.views
+            } for news in related_news]
