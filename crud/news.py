@@ -20,3 +20,9 @@ async def get_news_count(db: AsyncSession, category_id: int):
     return result.scalar_one()   
     # scalar_one() 只能有一个结果，如果没有结果或有多个结果会抛出异常
     # 数据库没问题可以用 scalars（）,scalars不会报错
+
+async def get_news_detail(db: AsyncSession, news_id: int):
+    # 查询指定新闻的详情
+    stmt = select(News).where(News.id == news_id)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()

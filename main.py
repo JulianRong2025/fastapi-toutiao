@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# 添加 CORS 中间件
+# 添加 CORS 中间件，解决跨域问题
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # 允许访问的源,开发阶段可以设置为 ["*"]，生产环境需要指定具体域名

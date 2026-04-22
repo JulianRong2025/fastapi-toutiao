@@ -1,6 +1,6 @@
 # 模块化路由就是把每个业务功能的接口拆分到独立文件里，再统一挂载到主应用中。
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from crud import news
 from config.db_config import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,7 +29,7 @@ async def get_categories(skip: int = 0, limit: int = 100, db: AsyncSession = Dep
 
 @router.get("/list")
 async def get_news_list(
-        category_id: int = Query(..., alias="categoryId"),
+        category_id: int = Query(..., alias="categoryId"),  # alias设置别名，前端传categoryId，后端接收category_id
         page: int = 1,
         page_size: int = Query(10, alias="pageSize", le=100),
         db: AsyncSession = Depends(get_db)
@@ -47,5 +47,27 @@ async def get_news_list(
             "list": news_list,
             "total": total,
             "hasMore": has_more
+        }
+    }
+
+@router.get("/detail")
+async def get_news_detail(db: AsyncSession = Depends(get_db), news_id: int = Query(..., alias="id")):
+    # 查询新闻详情 + 浏览量+1 +相关新闻
+    news_detail = await news.get_news_detail(db, news_id)
+    if not news_detail:
+        raise HTTPException(status_code=404, detail="新闻不存在")
+    return {
+        "code": 200,
+        "message": "获取新闻详情成功",
+        "data": {
+            "id": news_detail.id,
+            "title": news_detail.title,
+            "content": news_detail.content,
+            "image": news_detail.image,
+            "author": news_detail.author,
+            "publishTime": news_detail.publish_time,
+            "category_id": news_detail.category_id,
+            "views": news_detail.views,
+            "relatedNews": []
         }
     }

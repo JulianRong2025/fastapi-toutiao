@@ -33,7 +33,7 @@ class Category(Base):  # 继承 Base → 自动变成表
     # 有它 → 打印出来是清晰数据（方便调试）
 
 class News(Base):
-    __tablename__ = "news"
+    __tablename__ = "news" # 指定表名
 
     # 创建索引：提升查询速度 → 添加目录
     __table_args__ = (
