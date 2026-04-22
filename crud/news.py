@@ -1,4 +1,4 @@
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.news import Category, News
 
@@ -26,3 +26,12 @@ async def get_news_detail(db: AsyncSession, news_id: int):
     stmt = select(News).where(News.id == news_id)
     result = await db.execute(stmt)
     return result.scalar_one_or_none()
+
+async def increase_news_views(db: AsyncSession, news_id: int):
+    # 浏览量+1
+    stmt = update(News).where(News.id == news_id).values(views=News.views + 1)
+    result = await db.execute(stmt)
+    await db.commit()
+
+    # 更新操作后，要检查数据库是否真的命中的数据，命中了返回 true
+    return result.rowcount > 0 # 返回受影响的行数
