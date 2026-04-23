@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from config.db_config import get_db
 from schemas.users import UserAuthResponse, UserInfoResponse, UserRequest
-from crud.users import create_access_token, get_user_by_username, create_user
+from crud.users import create_access_token, get_user_by_username, create_user, authenticate_user
 from starlette import status
 from utils.response import success_response
 
@@ -40,3 +40,19 @@ async def register(user_data: UserRequest, db: AsyncSession = Depends(get_db)):
     #         }
     #     }
     # }
+
+@router.post("/login")
+async def login(user_data: UserRequest, db: AsyncSession = Depends(get_db)):
+    # 登录逻辑：验证用户是否存在，验证密码，生成令牌
+    user = await authenticate_user(user_data.username, user_data.password, db)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户名或密码错误")
+
+    user_token = await create_access_token(user.id, db)
+
+    response_data = UserAuthResponse(
+        token=user_token.token, 
+        user_info=UserInfoResponse.model_validate(user)  # model_validate()从user 这个 orm 对象中取值
+        )  
+    
+    return success_response(message="登录成功", data=response_data)

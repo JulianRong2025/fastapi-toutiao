@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.users import User, UserToken
 from schemas.users import UserRequest
-from utils.security import get_password_hash
+from utils.security import get_password_hash, verify_password
 
 # 根据用户名查询数据库
 async def get_user_by_username(username: str, db: AsyncSession):
@@ -46,3 +46,13 @@ async def create_access_token(user_id: int, db: AsyncSession):
     await db.commit()
     await db.refresh(user_token)  # 同步数据库自动生成的字段
     return user_token
+
+# 验证用户
+async def authenticate_user(username: str, password: str, db: AsyncSession):
+    user = await get_user_by_username(username, db)
+    if not user:
+        return None
+    # 验证密码
+    if not verify_password(password, user.password):
+        return None
+    return user
