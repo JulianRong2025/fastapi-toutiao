@@ -33,3 +33,16 @@ class UserAuthResponse(BaseModel):
         from_attributes=True,  # 允许从 ORM 模型对象创建 Pydantic 模型实例
         populate_by_name=True  # 允许使用字段别名来创建模型实例
     )
+
+# 更新用户信息的模型类
+class UserUpdateRequest(BaseModel):
+    nickname: Optional[str] = Field(None, max_length=50, description="昵称")
+    avatar: Optional[str] = Field(None, max_length=255, description="头像URL")
+    gender: Optional[str] = Field(None, max_length=10, description="性别")
+    bio: Optional[str] = Field(None, max_length=500, description="个人简介")
+    phone: Optional[str] = Field(None, max_length=20, description="电话号码")
+
+# 修改密码的模型类
+class UserChangePwdRequest(BaseModel):
+    old_password: str = Field(..., description="旧密码", alias="oldPassword")
+    new_password: str = Field(..., min_length=6,description="新密码", alias="newPassword")

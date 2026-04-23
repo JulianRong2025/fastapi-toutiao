@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from config.db_config import get_db
 from models.users import User
-from schemas.users import UserAuthResponse, UserInfoResponse, UserRequest
-from crud.users import create_access_token, get_user_by_username, create_user, authenticate_user
+from schemas.users import UserAuthResponse, UserChangePwdRequest, UserInfoResponse, UserRequest, UserUpdateRequest
+from crud.users import create_access_token, get_user_by_username, create_user, authenticate_user, update_user_info, change_user_password
 from starlette import status
 from utils.response import success_response
 from utils.auth import get_current_user
@@ -68,3 +68,29 @@ async def get_user_info(user: User = Depends(get_current_user), db: AsyncSession
     response_data = UserInfoResponse.model_validate(user)  # model_validate()从 user 这个 orm 对象中取值
 
     return success_response(message="获取用户信息成功", data=response_data)
+
+# 更新用户信息
+# 参数：用户输入的数据（请求体参数）→ 验证 token的 → db（调用更新的方法）
+@router.put("/update")
+async def update_user(user_data: UserUpdateRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    # 更改用户信息逻辑：验证 token → 更新（用户输入的数据put提交→请求体参数→定义 pydantic 类） → 请求体参数 → 定义pydantic 模型类 → 响应结果
+    updated_user = await update_user_info(user.username, user_data, db)
+
+    response_data = UserInfoResponse.model_validate(updated_user) 
+    
+    return success_response(message="更新用户信息成功", data=response_data)
+
+# 修改密码接口
+@router.put("/password")
+async def change_password(
+    password_data: UserChangePwdRequest, 
+    user: User = Depends(get_current_user), 
+    db: AsyncSession = Depends(get_db)
+):
+    result_change_password = await change_user_password(user, password_data.old_password, password_data.new_password, db)
+    if not result_change_password:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="修改密码失败，请重试")
+    
+    # response_data = UserInfoResponse.model_validate(user) 
+    
+    return success_response(message="修改密码成功")
