@@ -4,7 +4,7 @@ from config.db_config import get_db
 from crud.users import get_user_by_token
 from starlette import status
 
-# 整合 根据 token 查询用户信息，返回用户信息的函数
+# 整合 根据 token 查询用户信息，返回用户信息的函数, 返回的是一个 orm 对象
 async def get_current_user(
         authorization: str = Header(..., alias="Authorization"), 
         db: AsyncSession = Depends(get_db)
