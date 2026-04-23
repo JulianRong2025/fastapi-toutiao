@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config.db_config import get_db
 from crud.favorite import add_favorite_news, check_news_favorite, remove_favorite_news
 from models.users import User
-from schemas.favorite import FavoriteAddRequest, FavoriteCheckRequest
+from schemas.favorite import FavoriteAddRequest, FavoriteCheckRequest, FavoriteListItem
 from utils.auth import get_current_user
 from utils.response import success_response
 from starlette import status
@@ -41,3 +41,20 @@ async def remove_favorite(
     if not is_remove_favorite:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="收藏记录不存在")
     return success_response(message="取消收藏成功")
+
+@router.get("/list")
+async def get_favorite_list(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100, alias="pageSize"),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    rows, total = await get_favorite_list(db, user.id, page, page_size)
+    favorite_list = [{
+        **news.__dict__,
+        "favorite_time": favorite_time,
+        "favorite_id": favorite_id
+    } for news, favorite_time, favorite_id in rows]
+    has_more = page * page_size < total
+    data = FavoriteListItem(list=favorite_list, total=total, hasMore=has_more)
+    return success_response(message="获取收藏列表成功", data=data)
