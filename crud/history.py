@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
-from turtle import update
 
-from sqlalchemy import func, select
+
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.history import History
@@ -50,3 +50,19 @@ async def get_all_history_list(db: AsyncSession,
     result = await db.execute(query)
     rows = result.all()
     return rows, total_count
+
+# 删除浏览历史记录
+async def delete_history_news(db: AsyncSession, news_id: int, user_id: int):
+    query = delete(History).where(History.news_id == news_id, History.user_id == user_id)
+    result = await db.execute(query)
+    await db.commit()
+    
+    return result.rowcount > 0
+
+# 清空浏览历史记录
+async def clear_all_history_news(db: AsyncSession, user_id: int):
+    query = delete(History).where(History.user_id == user_id)
+    result = await db.execute(query)
+    await db.commit()
+    
+    return result.rowcount or 0
