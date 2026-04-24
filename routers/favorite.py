@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from config.db_config import get_db
-from crud.favorite import add_favorite_news, check_news_favorite, remove_favorite_news
+from crud.favorite import add_favorite_news, check_news_favorite, clear_all_favorite_news, remove_favorite_news
 from models.users import User
 from schemas.favorite import FavoriteAddRequest, FavoriteCheckRequest, FavoriteListItem
 from utils.auth import get_current_user
@@ -42,6 +42,7 @@ async def remove_favorite(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="收藏记录不存在")
     return success_response(message="取消收藏成功")
 
+# 获取收藏列表
 @router.get("/list")
 async def get_favorite_list(
     page: int = Query(1, ge=1),
@@ -58,3 +59,13 @@ async def get_favorite_list(
     has_more = page * page_size < total
     data = FavoriteListItem(list=favorite_list, total=total, hasMore=has_more)
     return success_response(message="获取收藏列表成功", data=data)
+
+# 清空收藏
+@router.delete("/clear")
+async def clear_favorite(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    deleted_count = await clear_all_favorite_news(db, user.id)
+    # 删除收藏记录的逻辑
+    return success_response(message=f"清空{deleted_count}条收藏记录", data=None)
