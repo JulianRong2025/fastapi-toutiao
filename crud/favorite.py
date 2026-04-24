@@ -28,11 +28,11 @@ async def remove_favorite_news(db: AsyncSession, user_id: int, news_id: int):
     return result.rowcount > 0
 
 # 获取收藏列表:某个用户，分页查询
-async def get_favorite_list(db: AsyncSession, 
-                            user_id: int, 
-                            page: int = 1, 
-                            page_size: int = 10
-                            ):
+async def get_all_favorite_list(db: AsyncSession, 
+                                user_id: int, 
+                                page: int = 1, 
+                                page_size: int = 10
+                                ):
     # 总量
     count_stmt = select(func.count(Favorite.id)).where(Favorite.user_id == user_id)  # 获取总量
     count_result = await db.execute(count_stmt)

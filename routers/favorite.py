@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from config.db_config import get_db
-from crud.favorite import add_favorite_news, check_news_favorite, clear_all_favorite_news, remove_favorite_news
+from crud.favorite import add_favorite_news, check_news_favorite, clear_all_favorite_news, get_all_favorite_list, remove_favorite_news
 from models.users import User
-from schemas.favorite import FavoriteAddRequest, FavoriteCheckRequest, FavoriteListItem
+from schemas.favorite import FavoriteAddRequest, FavoriteCheckRequest, FavoriteListItem, FavoriteNewsItem
 from utils.auth import get_current_user
 from utils.response import success_response
 from starlette import status
@@ -50,12 +50,12 @@ async def get_favorite_list(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    rows, total = await get_favorite_list(db, user.id, page, page_size)
-    favorite_list = [{
+    rows, total = await get_all_favorite_list(db, user.id, page, page_size)
+    favorite_list = [FavoriteNewsItem.model_validate({
         **news.__dict__,
         "favorite_time": favorite_time,
         "favorite_id": favorite_id
-    } for news, favorite_time, favorite_id in rows]
+    }) for news, favorite_time, favorite_id in rows]
     has_more = page * page_size < total
     data = FavoriteListItem(list=favorite_list, total=total, hasMore=has_more)
     return success_response(message="获取收藏列表成功", data=data)
