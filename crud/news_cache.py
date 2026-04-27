@@ -1,7 +1,7 @@
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from cache.news_cache import get_cached_categories, get_cached_news_list, set_cached_categories, set_cached_news_list
+from cache.news_cache import get_cached_categories, get_cached_news_detail, get_cached_news_list, set_cached_categories, set_cached_news_detail, set_cached_news_list
 from models.news import Category, News
 from schemas.base import NewsItemBase
 
@@ -55,11 +55,21 @@ async def get_news_count(db: AsyncSession, category_id: int):
     # scalar_one() 只能有一个结果，如果没有结果或有多个结果会抛出异常
     # 数据库没问题可以用 scalars（）,scalars不会报错
 
+# 查询指定新闻的详情
 async def get_news_detail(db: AsyncSession, news_id: int):
-    # 查询指定新闻的详情
+    # 尝试从缓存中读取新闻详情
+    cached_news_detail = await get_cached_news_detail(news_id)
+    if cached_news_detail is not None:
+        return cached_news_detail
+    # 如果缓存中没有数据，则从数据库中查询
     stmt = select(News).where(News.id == news_id)
     result = await db.execute(stmt)
-    return result.scalar_one_or_none()
+    news_detail =  result.scalar_one_or_none()
+    # 将查询结果缓存
+    if news_detail:
+        news_detail_data = jsonable_encoder(news_detail)
+        await set_cached_news_detail(news_id, news_detail_data)
+    return news_detail
 
 async def increase_news_views(db: AsyncSession, news_id: int):
     # 浏览量+1

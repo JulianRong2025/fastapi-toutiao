@@ -33,3 +33,12 @@ async def set_cached_news_list(category_id: Optional[int], page:int, page_size: 
     key = f"{NEWS_LIST_KEY_PREFIX}:{category_id}:{page}:{page_size}"
     return await set_cache(key, data, expire)
 
+# 读取新闻详情缓存
+async def get_cached_news_detail(news_id: int):
+    key = f"news_detail:{news_id}"
+    return await get_cache_json(key)
+
+# 写入新闻详情缓存
+async def set_cached_news_detail(news_id: int, data: Dict[str, Any], expire: int = 1800):
+    key = f"news_detail:{news_id}"
+    return await set_cache(key, data, expire)
