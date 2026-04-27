@@ -1,7 +1,7 @@
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from cache.news_cache import get_cached_categories, get_cached_news_detail, get_cached_news_list, set_cached_categories, set_cached_news_detail, set_cached_news_list
+from cache.news_cache import get_cached_categories, get_cached_news_detail, get_cached_news_list, get_cached_related_news, set_cached_categories, set_cached_news_detail, set_cached_news_list, set_cached_related_news
 from models.news import Category, News
 from schemas.base import NewsItemBase
 
@@ -47,6 +47,7 @@ async def get_news_list(db: AsyncSession, category_id: int, skip: int = 0, limit
         await set_cached_news_list(category_id, page, limit, news_data)
     return news_list
 
+
 async def get_news_count(db: AsyncSession, category_id: int):
     # 查询指定分类下的新闻总数
     stmt = select(func.count(News.id)).where(News.category_id == category_id)
@@ -54,6 +55,7 @@ async def get_news_count(db: AsyncSession, category_id: int):
     return result.scalar_one()   
     # scalar_one() 只能有一个结果，如果没有结果或有多个结果会抛出异常
     # 数据库没问题可以用 scalars（）,scalars不会报错
+
 
 # 查询指定新闻的详情
 async def get_news_detail(db: AsyncSession, news_id: int):
@@ -71,6 +73,7 @@ async def get_news_detail(db: AsyncSession, news_id: int):
         await set_cached_news_detail(news_id, news_detail_data)
     return news_detail
 
+
 async def increase_news_views(db: AsyncSession, news_id: int):
     # 浏览量+1
     stmt = update(News).where(News.id == news_id).values(views=News.views + 1)
@@ -80,7 +83,15 @@ async def increase_news_views(db: AsyncSession, news_id: int):
     # 更新操作后，要检查数据库是否真的命中的数据，命中了返回 true
     return result.rowcount > 0 # 返回受影响的行数
 
+
+# 获取相关新闻
 async def get_related_news(db: AsyncSession, category_id: int, news_id: int, limit: int = 5):
+    # 尝试从缓存中读取相关新闻
+    cached_related_news = await get_cached_related_news(news_id)
+    if cached_related_news is not None:
+        return cached_related_news
+    
+    # 如果缓存中没有数据，则从数据库中查询
     # order_by 排序：浏览量和发布时间
     stmt = select(News).where(
         News.category_id == category_id, 
@@ -92,16 +103,21 @@ async def get_related_news(db: AsyncSession, category_id: int, news_id: int, lim
             limit
             )
     result = await db.execute(stmt) 
-    # return result.scalars().all()
     related_news = result.scalars().all()
     # 用列表推导式把 News 对象转换成字典，前端需要的字段
-    return [{
+    related_news_json = [{
         "id": news.id,
-            "title": news.title,
-            "content": news.content,
-            "image": news.image,
-            "author": news.author,
-            "publishTime": news.publish_time,
-            "category_id": news.category_id,
-            "views": news.views
-            } for news in related_news]
+        "title": news.title,
+        "content": news.content,
+        "image": news.image,
+        "author": news.author,
+        "publishTime": news.publish_time,
+        "category_id": news.category_id,
+        "views": news.views
+        } for news in related_news]
+    # 统一转换为可 JSON 序列化的数据，避免 datetime 写入 Redis 失败
+    related_news_json = jsonable_encoder(related_news_json)
+    # 将查询结果缓存
+    if related_news_json:
+        await set_cached_related_news(news_id, related_news_json)
+    return related_news_json

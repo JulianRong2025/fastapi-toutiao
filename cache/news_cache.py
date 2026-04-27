@@ -39,6 +39,16 @@ async def get_cached_news_detail(news_id: int):
     return await get_cache_json(key)
 
 # 写入新闻详情缓存
-async def set_cached_news_detail(news_id: int, data: Dict[str, Any], expire: int = 1800):
+async def set_cached_news_detail(news_id: int, data: List[Dict[str, Any]], expire: int = 1800):
     key = f"news_detail:{news_id}"
+    return await set_cache(key, data, expire)
+
+# 读取相关新闻缓存
+async def get_cached_related_news(news_id: int, expire: int = 600):
+    key = f"related_news:{news_id}"
+    return await get_cache_json(key)
+
+# 写入相关新闻缓存
+async def set_cached_related_news(news_id: int, data: List[Dict[str, Any]], expire: int = 600):
+    key = f"related_news:{news_id}"
     return await set_cache(key, data, expire)
