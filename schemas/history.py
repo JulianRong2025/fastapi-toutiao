@@ -1,13 +1,13 @@
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
-from schemas.base import NewsItenBase
+from schemas.base import NewsItemBase
 
 # 添加浏览历史请求体
 class HistoryAddRequest(BaseModel):
     news_id: int = Field(..., alias="newsId")
 
-class HistoryNewsItemResponse(NewsItenBase):
+class HistoryNewsItemResponse(NewsItemBase):
     history_id: int = Field(alias="historyId")
     view_time: datetime = Field(alias="viewTime")
 

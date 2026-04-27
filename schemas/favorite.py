@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from schemas.base import NewsItenBase
+from schemas.base import NewsItemBase
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -16,7 +16,7 @@ class FavoriteAddRequest(BaseModel):
 
 
 # 规划两个类：一个是新闻模型类 + 收藏的模型类（浏览历史也要使用到新闻模型类，为了增加复用性，分成两个类）
-class FavoriteNewsItem(NewsItenBase):
+class FavoriteNewsItem(NewsItemBase):
     favorite_time: datetime = Field(alias="favoriteTime")
     favorite_id: int = Field(alias="favoriteId")
 

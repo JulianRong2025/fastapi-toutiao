@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class NewsItenBase(BaseModel):
+class NewsItemBase(BaseModel):
     id: int
     title: str
     discription: Optional[str] = None
